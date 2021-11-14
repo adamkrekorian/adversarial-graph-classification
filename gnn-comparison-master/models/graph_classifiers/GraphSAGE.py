@@ -50,3 +50,40 @@ class GraphSAGE(nn.Module):
         x = F.relu(self.fc1(x))
         x = self.fc2(x)
         return x
+
+class GraphSAGEAdj(nn.Module):
+    def __init__(self, dim_features, dim_target, config):
+        super(GraphSAGEAdj, self).__init__()
+        dim_embedding = config['dim_embedding']
+        self.aggregation = config['aggregation']  # can be mean or max
+
+        if self.aggregation == 'max':
+            self.fc_max = nn.Linear(dim_embedding, dim_embedding)
+
+        self.gc1 = nn.Linear(1,32)
+        self.gc2 = nn.Linear(32, 32)
+        self.gc3 = nn.Linear(32, 32)
+
+        self.fc1 = nn.Linear(3 * dim_embedding, dim_embedding)
+        self.fc2 = nn.Linear(dim_embedding, dim_target)
+
+    def forward(self, a_hat, x, batch):
+        inp = torch.matmul(a_hat, x)
+
+
+        x_all = []
+        y = F.relu(self.gc1(inp))
+        x_all.append(y)
+        y = F.relu(self.gc2(y))
+        x_all.append(y)
+        y = F.relu(self.gc3(y))
+        x_all.append(y)
+
+        x = torch.cat(x_all, dim=1)
+        x = global_mean_pool(x, batch)
+
+
+        f = F.relu(self.fc1(x))
+        f = self.fc2(f)
+
+        return f

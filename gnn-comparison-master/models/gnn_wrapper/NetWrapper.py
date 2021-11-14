@@ -30,8 +30,37 @@ class NetWrapper:
         for data in train_loader:
 
             data = data.to(self.device)
+
+            d_hat = torch.eye(len(data.x)) + torch.diag(torch.bincount(data.edge_index[0]))
+
+            adj_mat = torch.zeros((len(data.x), len(data.x)))
+
+
+            for i in range(len(data.edge_index)):
+                adj_mat[data.edge_index[0,i],data.edge_index[1,i]] +=1
+
+            adj_mat.requires_grad = True
+
+            a_tilde = torch.eye(len(data.x)) + adj_mat
+
+
+
+            # d_hat_pow = torch.matrix_power(d_hat,)
+
+            evals, evecs = torch.eig(d_hat, eigenvectors=True)  # get eigendecomposition
+            evals = evals[:, 0]  # get real part of (real) eigenvalues
+
+            evpow = evals ** (-1 / 2)  # raise eigenvalues to fractional power
+
+            # build exponentiated matrix from exponentiated eigenvalues
+            d_hat_pow = torch.matmul(evecs, torch.matmul(torch.diag(evpow), torch.inverse(evecs)))
+
+            a_hat = torch.matmul(torch.matmul(d_hat_pow, a_tilde), d_hat_pow)
+
+
+
             optimizer.zero_grad()
-            output = model(data)
+            output = model(a_hat, data.x, data.batch)
 
             if not isinstance(output, tuple):
                 output = (output,)
@@ -39,6 +68,8 @@ class NetWrapper:
             if self.classification:
                 loss, acc = self.loss_fun(data.y, *output)
                 loss.backward()
+
+                # torch.autograd.grad(output[0][:, 0], data.edge_index, retain_graph=True)
 
                 try:
                     num_graphs = data.num_graphs

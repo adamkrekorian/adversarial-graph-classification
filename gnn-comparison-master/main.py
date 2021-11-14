@@ -7,6 +7,7 @@ config_file = "config_GraphSAGE.yml"
 dataset_name = "REDDIT-BINARY"
 
 model_configurations = Grid(config_file, dataset_name)
+model_configurations[0]['batch_size'] = 1
 
 exp_path = "test"
 

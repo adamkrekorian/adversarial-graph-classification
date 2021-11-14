@@ -1,6 +1,7 @@
 from models.gnn_wrapper.NetWrapper import NetWrapper
 
 from experiments.Experiment import Experiment
+from models.graph_classifiers.GraphSAGE import GraphSAGEAdj
 
 
 class EndToEndExperiment(Experiment):
@@ -35,7 +36,8 @@ class EndToEndExperiment(Experiment):
         train_loader, val_loader = dataset_getter.get_train_val(dataset, self.model_config['batch_size'],
                                                                 shuffle=shuffle)
 
-        model = model_class(dim_features=dataset.dim_features, dim_target=dataset.dim_target, config=self.model_config)
+        # model = model_class(dim_features=dataset.dim_features, dim_target=dataset.dim_target, config=self.model_config)
+        model = GraphSAGEAdj(dim_features=dataset.dim_features, dim_target=dataset.dim_target, config=self.model_config)
         net = NetWrapper(model, loss_function=loss_class(), device=self.model_config['device'])
 
         optimizer = optim_class(model.parameters(),
