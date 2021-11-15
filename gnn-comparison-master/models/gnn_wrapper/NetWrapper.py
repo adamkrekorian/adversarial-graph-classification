@@ -34,7 +34,7 @@ def compute_adj_matrix(data):
     d_hat_pow = torch.matmul(evecs, torch.matmul(torch.diag(evpow), torch.inverse(evecs)))
 
     a_hat = torch.matmul(torch.matmul(d_hat_pow, a_tilde), d_hat_pow)
-    return a_hat
+    return a_hat, adj_mat
 
 class NetWrapper:
 
@@ -55,7 +55,7 @@ class NetWrapper:
 
             data = data.to(self.device)
 
-            data['a_hat'] = compute_adj_matrix(data)
+            data['a_hat'], _ = compute_adj_matrix(data)
 
             optimizer.zero_grad()
             output = model(data)
@@ -98,7 +98,7 @@ class NetWrapper:
         acc_all = 0
         for data in loader:
             data = data.to(self.device)
-            data['a_hat'] = compute_adj_matrix(data)
+            data['a_hat'], _ = compute_adj_matrix(data)
             output = model(data)
 
             if not isinstance(output, tuple):
@@ -173,9 +173,9 @@ class NetWrapper:
                     print(msg)
             
             if val_loss < best_val_loss:
-                    best_val_loss = val_loss
-                    print("Saving...")
-                    torch.save(self.model.state_dict(), "../../graph-sage-binary.pt")
+                best_val_loss = val_loss
+                print("Saving...")
+                torch.save(self.model.state_dict(), "../../graph-sage-binary.pt")
 
         time_per_epoch = torch.tensor(time_per_epoch)
         avg_time_per_epoch = float(time_per_epoch.mean())
