@@ -11,6 +11,30 @@ def format_time(avg_time):
     minutes, seconds = divmod(remainder, 60)
     return f"{hours:02d}:{minutes:02d}:{int(seconds):02d}.{str(avg_time.microseconds)[:3]}"
 
+def compute_adj_matrix(data):
+    d_hat = torch.eye(len(data.x)) + torch.diag(torch.bincount(data.edge_index[0]))
+
+    adj_mat = torch.zeros((len(data.x), len(data.x)))
+
+    for i in range(len(data.edge_index)):
+        adj_mat[data.edge_index[0, i], data.edge_index[1, i]] += 1
+
+    adj_mat.requires_grad = True
+
+    a_tilde = torch.eye(len(data.x)) + adj_mat
+
+    # d_hat_pow = torch.matrix_power(d_hat,)
+
+    evals, evecs = torch.eig(d_hat, eigenvectors=True)  # get eigendecomposition
+    evals = evals[:, 0]  # get real part of (real) eigenvalues
+
+    evpow = evals ** (-1 / 2)  # raise eigenvalues to fractional power
+
+    # build exponentiated matrix from exponentiated eigenvalues
+    d_hat_pow = torch.matmul(evecs, torch.matmul(torch.diag(evpow), torch.inverse(evecs)))
+
+    a_hat = torch.matmul(torch.matmul(d_hat_pow, a_tilde), d_hat_pow)
+    return a_hat
 
 class NetWrapper:
 
@@ -31,36 +55,10 @@ class NetWrapper:
 
             data = data.to(self.device)
 
-            d_hat = torch.eye(len(data.x)) + torch.diag(torch.bincount(data.edge_index[0]))
-
-            adj_mat = torch.zeros((len(data.x), len(data.x)))
-
-
-            for i in range(len(data.edge_index)):
-                adj_mat[data.edge_index[0,i],data.edge_index[1,i]] +=1
-
-            adj_mat.requires_grad = True
-
-            a_tilde = torch.eye(len(data.x)) + adj_mat
-
-
-
-            # d_hat_pow = torch.matrix_power(d_hat,)
-
-            evals, evecs = torch.eig(d_hat, eigenvectors=True)  # get eigendecomposition
-            evals = evals[:, 0]  # get real part of (real) eigenvalues
-
-            evpow = evals ** (-1 / 2)  # raise eigenvalues to fractional power
-
-            # build exponentiated matrix from exponentiated eigenvalues
-            d_hat_pow = torch.matmul(evecs, torch.matmul(torch.diag(evpow), torch.inverse(evecs)))
-
-            a_hat = torch.matmul(torch.matmul(d_hat_pow, a_tilde), d_hat_pow)
-
-
+            data['a_hat'] = compute_adj_matrix(data)
 
             optimizer.zero_grad()
-            output = model(a_hat, data.x, data.batch)
+            output = model(data)
 
             if not isinstance(output, tuple):
                 output = (output,)
@@ -100,6 +98,7 @@ class NetWrapper:
         acc_all = 0
         for data in loader:
             data = data.to(self.device)
+            data['a_hat'] = compute_adj_matrix(data)
             output = model(data)
 
             if not isinstance(output, tuple):

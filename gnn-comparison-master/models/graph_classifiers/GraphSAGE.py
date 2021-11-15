@@ -67,7 +67,8 @@ class GraphSAGEAdj(nn.Module):
         self.fc1 = nn.Linear(3 * dim_embedding, dim_embedding)
         self.fc2 = nn.Linear(dim_embedding, dim_target)
 
-    def forward(self, a_hat, x, batch):
+    def forward(self, data):
+        a_hat, x, batch = data.a_hat, data.x, data.batch
         inp = torch.matmul(a_hat, x)
 
 
