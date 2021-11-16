@@ -94,11 +94,15 @@ class NetWrapper:
         model = self.model.to(self.device)
         model.eval()
 
+
+
         loss_all = 0
         acc_all = 0
         for data in loader:
             data = data.to(self.device)
+
             data['a_hat'], _ = compute_adj_matrix(data)
+
             output = model(data)
 
             if not isinstance(output, tuple):
