@@ -9,6 +9,7 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 def compute_adj_matrix(data):
     d_hat = torch.eye(len(data.x)) + torch.diag(torch.bincount(data.edge_index[0]))
+    d_hat.requires_grad = True
 
     adj_mat = torch.zeros((len(data.x), len(data.x)))
 
@@ -18,22 +19,36 @@ def compute_adj_matrix(data):
     adj_mat.requires_grad = True
 
     a_tilde = torch.eye(len(data.x)) + adj_mat
+    a_tilde.requires_grad = True
 
     # d_hat_pow = torch.matrix_power(d_hat,)
 
     evals, evecs = torch.eig(d_hat, eigenvectors=True)  # get eigendecomposition
     evals = evals[:, 0]  # get real part of (real) eigenvalues
 
+    evals.requires_grad = True
+
     evpow = evals ** (-1 / 2)  # raise eigenvalues to fractional power
 
+    evpow.requires_grad = True
     # build exponentiated matrix from exponentiated eigenvalues
     d_hat_pow = torch.matmul(evecs, torch.matmul(torch.diag(evpow), torch.inverse(evecs)))
+    d_hat_pow.requires_grad = True
 
     a_hat = torch.matmul(torch.matmul(d_hat_pow, a_tilde), d_hat_pow)
+    a_hat.requires_grad = True
+
     return a_hat, adj_mat
 
 def add_dummy_node(data):
-    print(data)
+    data.x = torch.cat((data.x, torch.tensor([[1.]])), 1)
+    add_edges = torch.zeros((2, len(data.x - 1)))
+    for i, x in enumerate(data.x):
+        add_edges[0][i] = len(data.x) - 1
+        add_edges[1][i] = i
+
+
+    print(data.x)
 
 
 

@@ -175,7 +175,7 @@ class NetWrapper:
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
                 print("Saving...")
-                torch.save(self.model.state_dict(), "../../graph-sage-binary.pt")
+                torch.save(self.model.state_dict(), "../graph-sage-binary-maxpool.pt")
 
         time_per_epoch = torch.tensor(time_per_epoch)
         avg_time_per_epoch = float(time_per_epoch.mean())
