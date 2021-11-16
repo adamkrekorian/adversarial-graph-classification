@@ -121,7 +121,7 @@ for data in train_loader:
 
         node_to_add = torch.argmin(grads[0][:, -1])
 
-        if grads[0][node_to_add, -1] < 0:
+        if grads[0][node_to_add, -1] < -0.001:
             data = add_edge(data, node_to_add, len(grads[0])-1)
         else:
             add_dummy_node(data)
