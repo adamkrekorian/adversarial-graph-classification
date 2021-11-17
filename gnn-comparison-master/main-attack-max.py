@@ -6,6 +6,8 @@ from evaluation.dataset_getter import DatasetGetter
 import torch.nn as nn
 from config.base import Grid, Config
 
+import csv
+
 # Set device
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -99,9 +101,11 @@ net.eval()
 
 criterion = nn.CrossEntropyLoss()
 
+# Metrics
+metrics = {'num_incorrect': 0, 'num_successful': 0, 'num_unsuccessful': 0}
+
 # add a node to data.x
-for data in train_loader:
-    cost = 0
+for data in val_loader:
     num_add_nodes = 0
     num_add_edges = 0
 
@@ -111,12 +115,13 @@ for data in train_loader:
     data['a_hat'], adj_matrix = compute_adj_matrix(data)
     output = net(data)
 
-    original_output = output
-
-    loss = criterion(output, data.y)
+    if (data.y[0] != torch.argmax(output)):
+        metrics['num_incorrect'] += 1
+        print('Incorrect Classification')
+        continue
 
     its = 0
-    while its < 1000 and data.y[0] == torch.argmax(output):
+    while its < data.num_nodes and data.y[0] == torch.argmax(output):
         data['a_hat'], adj_matrix = compute_adj_matrix(data)
         output = net(data)
 
@@ -133,7 +138,15 @@ for data in train_loader:
             add_dummy_node(data)
             num_add_nodes += 1
         its +=1
-    print(f'Label: {data.y.item()}')
-    print(f'Additional Nodes: {num_add_nodes}')
-    print(f'Additional Edges: {num_add_edges}')
+
+    if num_add_nodes+num_add_edges < data.num_nodes:
+        metrics['num_successful'] += 1
+    else:
+        metrics['num_unsuccessful'] += 1
+    print(f'Label: {data.y.item()}, Nodes: {data.num_nodes}, Edges {data.num_edges}')
+    print(f'Percent Additional Nodes: {100*num_add_nodes/data.num_nodes:.3f}%, Percent Additional Edges: {100*num_add_edges/data.num_edges:.3f}%')
+
+w = csv.writer(open("metrics-maxpool.csv", "w"))
+for key, val in metrics.items():
+    w.writerow([key, val])
 

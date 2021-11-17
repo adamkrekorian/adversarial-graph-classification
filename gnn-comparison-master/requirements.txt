@@ -34,7 +34,7 @@ pytz==2020.1
 PyWavelets==1.1.1
 PyYAML==5.4
 rdflib==5.0.0
-requests==2.23.0
+requests
 scikit-image==0.17.2
 scikit-learn==0.23.0
 scipy==1.4.1
@@ -42,5 +42,5 @@ six==1.14.0
 threadpoolctl==2.0.0
 tifffile==2020.5.11
 traitlets==4.3.3
-urllib3==1.26.5
+urllib3
 wcwidth==0.1.9
