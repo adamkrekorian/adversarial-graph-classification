@@ -2,7 +2,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from torch_geometric.nn import SAGEConv, global_mean_pool
+from torch_geometric.nn import SAGEConv, global_max_pool
 
 import torch
 import torch.nn.functional as F
@@ -45,7 +45,7 @@ class GraphSAGE(nn.Module):
             x_all.append(x)
 
         x = torch.cat(x_all, dim=1)
-        x = global_mean_pool(x, batch)
+        x = global_max_pool(x, batch)
 
         x = F.relu(self.fc1(x))
         x = self.fc2(x)
@@ -81,7 +81,7 @@ class GraphSAGEAdj(nn.Module):
         x_all.append(y)
 
         x = torch.cat(x_all, dim=1)
-        x = global_mean_pool(x, batch)
+        x = global_max_pool(x, batch)
 
 
         f = F.relu(self.fc1(x))

@@ -86,13 +86,14 @@ train_loader, val_loader = dataset_getter.get_train_val(dataset,
                                                         shuffle=False)
 
 # Load Model
-saved_model_path = "../graph-sage-binary.pt"
+saved_model_path = "../graph-sage-binary-maxpool.pt"
 
 
 net = GraphSAGEAdj(dim_features=dataset.dim_features, dim_target=dataset.dim_target, config=model_configurations[0])
 net.load_state_dict(torch.load(saved_model_path))
 
 net.to(device)
+net.eval()
 
 # Generate Adversarial Node
 
@@ -100,7 +101,12 @@ criterion = nn.CrossEntropyLoss()
 
 # add a node to data.x
 for data in train_loader:
+    cost = 0
+    num_add_nodes = 0
+    num_add_edges = 0
+
     add_dummy_node(data)
+    num_add_nodes += 1
 
     data['a_hat'], adj_matrix = compute_adj_matrix(data)
     output = net(data)
@@ -118,23 +124,16 @@ for data in train_loader:
         # grads = torch.autograd.grad(output[:, 1], data['a_hat'], retain_graph=True)
 
         grads = torch.autograd.grad(loss, adj_matrix, retain_graph=True)
-
         node_to_add = torch.argmin(grads[0][:, -1])
 
         if grads[0][node_to_add, -1] < -0.001:
             data = add_edge(data, node_to_add, len(grads[0])-1)
+            num_add_edges += 1
         else:
             add_dummy_node(data)
+            num_add_nodes += 1
         its +=1
-    print()
-
-
-
-
-
-# add every edge to edge_index
-# compute adjacency matrix on data
-# forward pass of GraphSAGE
-# torch.autograd.grad(output[0][:, 0], adj_mat, retain_graph=True) gradient of the output with respect to the adjacency matrix
-    # all the intermediate tensors require grad
+    print(f'Label: {data.y.item()}')
+    print(f'Additional Nodes: {num_add_nodes}')
+    print(f'Additional Edges: {num_add_edges}')
 
