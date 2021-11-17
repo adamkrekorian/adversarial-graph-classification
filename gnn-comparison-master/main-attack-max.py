@@ -1,6 +1,6 @@
 import torch.cuda
 
-from models.graph_classifiers.GraphSAGE import GraphSAGEAdjMean
+from models.graph_classifiers.GraphSAGE import GraphSAGEAdjMax
 from evaluation.dataset_getter import DatasetGetter
 
 import torch.nn as nn
@@ -86,10 +86,10 @@ train_loader, val_loader = dataset_getter.get_train_val(dataset,
                                                         shuffle=False)
 
 # Load Model
-saved_model_path = "../graph-sage-binary.pt"
+saved_model_path = "../graph-sage-binary-maxpool.pt"
 
 
-net = GraphSAGEAdjMean(dim_features=dataset.dim_features, dim_target=dataset.dim_target, config=model_configurations[0])
+net = GraphSAGEAdjMax(dim_features=dataset.dim_features, dim_target=dataset.dim_target, config=model_configurations[0])
 net.load_state_dict(torch.load(saved_model_path))
 
 net.to(device)
@@ -136,3 +136,4 @@ for data in train_loader:
     print(f'Label: {data.y.item()}')
     print(f'Additional Nodes: {num_add_nodes}')
     print(f'Additional Edges: {num_add_edges}')
+
